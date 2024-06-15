@@ -18,7 +18,6 @@ class AuthController extends Controller
     }
     public function login(Request $request)
     {
-        //validation rules
         $rules = [
             'email' => 'required|email',
             'password' => 'required'
@@ -48,6 +47,28 @@ class AuthController extends Controller
                 'status' => 'error',
                 'message' => 'Invalid credentials'
             ], 401);
+        }
+    }
+
+    public function me()
+    {
+        //check valid token
+        if (!JWTAuth::parseToken()->authenticate()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid token'
+            ], 401);
+        } else {
+            $user = JWTAuth::user();
+            return response()->json([
+                'status' => 'success',
+                'data' => $user,
+                'auth' => [
+                    'token' => JWTAuth::getToken()->get(),
+                    'type' => 'Bearer',
+                    'expires_in' => JWTAuth::factory()->getTTL() * 60
+                ]
+            ]);
         }
     }
 
