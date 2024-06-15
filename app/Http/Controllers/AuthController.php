@@ -18,10 +18,6 @@ class AuthController extends Controller
     }
     public function login(Request $request)
     {
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Logged in successfully'
-        ]);
         //validation rules
         return response()->json([
             'status' => 'success',
