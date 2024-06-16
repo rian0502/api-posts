@@ -174,4 +174,26 @@ class PostsController extends Controller
             'message' => 'Post deleted successfully'
         ], 200);
     }
+
+    public function myPosts(Request $request)
+    {
+        $posts = PostModel::with('category', 'user')->where('user_id', Auth::guard('api')->user()->id)->orderBy('created_at', 'desc')->get()->map(function ($post) {
+            return [
+                'id' => $post->id,
+                'title' => $post->title,
+                'content' => $post->content,
+                'image' => url('images/' . $post->image),
+                'category' => $post->category->name,
+                'user' => $post->user->name,
+                'created_at' => Carbon::parse($post->created_at)->diffForHumans()
+            ];
+        });
+        return response()->json(
+            [
+                'status' => 'success',
+                'data' => $posts
+            ],
+            200
+        );
+    }
 }

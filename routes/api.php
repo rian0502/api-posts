@@ -30,4 +30,6 @@ Route::group(
 );
 
 Route::resource('posts', PostsController::class);
+Route::get('my-posts', [PostsController::class, 'myPosts'])->name('myPosts');
+
 Route::resource('categories', CateogryController::class);
