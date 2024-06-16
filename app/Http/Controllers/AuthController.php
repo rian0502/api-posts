@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -94,15 +95,25 @@ class AuthController extends Controller
                 'status' => 'error',
                 'errors' => $valid->errors()
             ], 422);
+        } else {
+            $user = new User();
+            $user->name = $request->name;
+            $user->email = $request->email;
+            $user->password = bcrypt($request->password);
+            $user->email_verified_at = now();
+            $user->remember_token = Str::random(10);
+            $user->save();
+            //logi user
+            $token = JWTAuth::fromUser($user);
+            return response()->json([
+                'status' => 'success',
+                'user' => $user,
+                'auth' => [
+                    'token' => $token,
+                    'type' => 'Bearer',
+                    'expires_in' => 3600
+                ]
+            ]);
         }
-        $user = new User();
-        $user->name = $request->name;
-        $user->email = $request->email;
-        $user->password = bcrypt($request->password);
-        $user->save();
-        return response()->json([
-            'status' => 'success',
-            'message' => 'User created successfully'
-        ]);
     }
 }
