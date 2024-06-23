@@ -69,7 +69,7 @@ class AuthController extends Controller
                     'type' => 'Bearer',
                     'expires_in' => JWTAuth::factory()->getTTL() * 60
                 ]
-            ]);
+            ], 200);
         }
     }
 
