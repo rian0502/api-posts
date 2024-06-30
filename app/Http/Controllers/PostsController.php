@@ -119,7 +119,7 @@ class PostsController extends Controller
         $rules = [
             'title' => 'required|string',
             'content' => 'required|string',
-            'image' => 'image|mimes:jpeg,png,jpg,gif,svg|max:1048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:1048',
             'category_id' => 'required|string|exists:categories,id'
         ];
         $valid = Validator::make($request->all(), $rules);
