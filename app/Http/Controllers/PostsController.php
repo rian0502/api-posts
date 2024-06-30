@@ -110,36 +110,39 @@ class PostsController extends Controller
     {
         //
         $post = PostModel::find($id);
+
         if ($post->user_id !== Auth::guard('api')->user()->id) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'You are not authorized to update this post'
             ], 401);
         }
-        $rules = [
+
+        $valid = Validator::make($request->all(), [
             'title' => 'required|string',
             'content' => 'required|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:1048',
             'category_id' => 'required|string|exists:categories,id'
-        ];
-        $valid = Validator::make($request->all(), $rules);
+        ]);
+
         if ($valid->fails()) {
             return response()->json([
                 'status' => 'error',
                 'message' => $valid->errors()
             ], 422);
         }
-        $post->title = $request->title;
-        $post->content = $request->content;
-        $post->category_id = $request->category_id;
+
+        $post->fill($request->only(['title', 'content', 'category_id']));
+
         if ($request->hasFile('image')) {
             $image = $request->file('image');
             $name = time() . '.' . $image->getClientOriginalExtension();
-            $destinationPath = public_path('/images');
-            $image->move($destinationPath, $name);
+            $image->move(public_path('/images'), $name);
             $post->image = $name;
         }
+
         $post->save();
+
         return response()->json([
             'status' => 'success',
             'message' => 'Post updated successfully'
