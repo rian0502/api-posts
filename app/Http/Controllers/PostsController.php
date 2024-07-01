@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use App\Models\PostModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -108,38 +109,25 @@ class PostsController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
         $post = PostModel::find($id);
-
         if ($post->user_id !== Auth::guard('api')->user()->id) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'You are not authorized to update this post'
             ], 401);
         }
-
         $valid = Validator::make($request->all(), [
             'title' => 'required|string',
             'content' => 'required|string',
             'category_id' => 'required|string|exists:categories,id'
         ]);
-
         if ($valid->fails()) {
             return response()->json([
                 'status' => 'error',
                 'message' => $valid->errors()
             ], 422);
         }
-
         $post->fill($request->only(['title', 'content', 'category_id']));
-
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $name = time() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path('/images'), $name);
-            $post->image = $name;
-        }
-
         $post->save();
 
         return response()->json([
@@ -173,7 +161,7 @@ class PostsController extends Controller
         ], 200);
     }
 
-    public function myPosts(Request $request)
+    public function myPosts()
     {
         $posts = PostModel::with('category', 'user')->where('user_id', Auth::guard('api')->user()->id)->orderBy('created_at', 'desc')->get()->map(function ($post) {
             return [
@@ -193,5 +181,40 @@ class PostsController extends Controller
             ],
             200
         );
+    }
+    public function uploadUpdateImage(Request $request)
+    {
+        $post = PostModel::find($request->id);
+        $valid = Validator::make($request->all(), [
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:1048'
+        ]);
+        if ($valid->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $valid->errors()
+            ], 422);
+        }
+        if ($post->user_id !== Auth::guard('api')->user()->id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You are not authorized to update this post'
+            ], 401);
+        }
+        $file = $request->file('image');
+        $name = time() . '.' . $file->getClientOriginalExtension();
+        $destinationPath = public_path('/images');
+        $file->move($destinationPath, $name);
+        if ($post->image) {
+            $image_path = public_path('images/' . $post->image);
+            if (file_exists($image_path)) {
+                unlink($image_path);
+            }
+        }
+        $post->image = $name;
+        $post->save();
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Image updated successfully'
+        ], 200);
     }
 }
